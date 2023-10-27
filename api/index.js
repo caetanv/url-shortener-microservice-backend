@@ -75,6 +75,21 @@ app.post('/api/shorturl', async (req, res) => {
   }
 });
 
+// redirect url endpoint
+app.get('/api/shorturl/:id', async (req, res) => {
+  try {
+    const shortUrlId = req.params.id;
+
+    const { original_url } = await Url.findOne({
+      short_url: shortUrlId,
+    });
+
+    res.redirect(original_url);
+  } catch (error) {
+    res.status(500).send('Internal Server Error');
+  }
+});
+
 app.listen(port, function () {
   console.log(`Listening on port ${port}`);
 });
