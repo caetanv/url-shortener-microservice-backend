@@ -32,9 +32,47 @@ app.get('/', function (req, res) {
   res.sendFile(process.cwd() + '/views/index.html');
 });
 
+function validateUrl(url) {
+  const urlRegex =
+    /^(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)?[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$/;
+
+  return urlRegex.test(url);
+}
+
 // Your first API endpoint
 app.get('/api/hello', function (req, res) {
   res.json({ greeting: 'hello API' });
+});
+
+// post url endpoint
+app.post('/api/shorturl', async (req, res) => {
+  try {
+    const originalUrl = req.body.url;
+
+    if (!validateUrl(originalUrl)) {
+      return res.json({ error: 'invalid url' });
+    }
+
+    const lastUrlDoc = await Url.findOne({}, {}, { sort: { _id: -1 } });
+    let shortUrl = 0;
+
+    if (lastUrlDoc) {
+      shortUrl = lastUrlDoc.short_url;
+    }
+
+    const url = new Url({
+      original_url: originalUrl,
+      short_url: (shortUrl += 1),
+    });
+
+    await url.save();
+
+    res
+      .status(201)
+      .json({ original_url: url.original_url, short_url: url.short_url });
+  } catch (error) {
+    res.status(500).send('Internal Server Error');
+  }
 });
 
 app.listen(port, function () {
